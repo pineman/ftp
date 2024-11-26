@@ -11,6 +11,19 @@ use crate::{bw, memory};
 
 pub mod instructions;
 
+fn carrying_add(x:u8, y:u8, carry: bool) -> (u8, bool) {
+    let carry: u8 = carry as u8;
+    let half_adder = x ^ y ;
+    let sum = half_adder ^ carry;
+    let carry = (carry & half_adder) | (x & y);
+    (sum, carry == 1)
+}
+
+// yolo
+fn borrowing_sub(x:u8, y:u8, borrow:bool) -> (u8, bool) {
+    carrying_add(x, !y, !borrow)
+}
+
 #[derive(Clone, PartialEq)]
 pub struct LR35902 {
     af: u16,
@@ -403,9 +416,9 @@ impl LR35902 {
         self.set_c_flag(overflow);
         result
     }
-
+    
     fn addc8(&mut self, x: u8, y: u8) -> u8 {
-        let (result, overflow) = x.carrying_add(y, self.c_flag());
+        let (result, overflow) = carrying_add(x, y, self.c_flag());
         self.set_z_flag(result == 0);
         self.set_n_flag(false);
         self.set_h_flag(self.half_carryc8(x, y, self.c_flag() as u8));
@@ -424,10 +437,10 @@ impl LR35902 {
     }
 
     fn subc8(&mut self, x: u8, y: u8) -> u8 {
-        let (result, overflow) = x.borrowing_sub(y, self.c_flag());
+        let (result, overflow) = borrowing_sub(x, y, self.c_flag());
         self.set_z_flag(result == 0);
         self.set_n_flag(true);
-        self.set_h_flag((x & 0x0f).borrowing_sub(y & 0x0f, self.c_flag()).1);
+        self.set_h_flag(borrowing_sub(x & 0x0f, y & 0x0f, self.c_flag()).1);
         self.set_c_flag(overflow);
         result
     }

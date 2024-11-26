@@ -103,11 +103,10 @@ pub fn write_pgm_screenshot(frame: &Frame, filename: &str) {
     write!(file, "P2\n# Game Boy screenshot: {filename}\n160 144\n3\n").unwrap();
 
     // Our Game Boy's framebuffer seems to have a direct correspondence to this!
-    for line in frame.array_chunks::<160>() {
+    for line in frame.chunks(160) {
         let pgm_line = line
             .iter()
-            .map(|p| (b'3' - *p) as char) // ASCII from '0' to '3'
-            .intersperse(' ')
+            .map(|p| String::from((b'3' - *p) as char) + " ") // ASCII from '0' to '3'
             .collect::<String>()
             + "\n";
 
